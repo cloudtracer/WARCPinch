@@ -1,0 +1,28 @@
+{
+   "background": {
+      "page": "html/background.html"
+   },
+   "content_scripts": [ {
+      "js": [ "js/jquery-2.1.1.min.js", "js/imagesFromCSSExtractor.js", "js/content.js" ],
+      "matches": [ "http://*/*", "https://*/*" ]
+   } ],
+   "content_security_policy": "script-src 'self'; object-src 'self'",
+   "description": "Create WARC files for use in signature creations (SHA1, SHA2, SSDEEP). Based off WARCreate.",
+   "homepage_url": "http://threatpinch.com/",
+   "icons": {
+      "128": "icons/icon-128.png",
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png"
+   },
+   "manifest_version": 2,
+   "name": "WARCPinch",
+   "options_page": "html/options.html",
+   "page_action": {
+      "default_icon": "icons/icon-19.png",
+      "default_popup": "html/popup.html",
+      "default_title": "WARCPinch"
+   },
+   "permissions": [ "webRequest", "webRequestBlocking", "tabs", "activeTab", "storage", "unlimitedStorage", "http://*/*", "http://*/", "*://*/*", "notifications", "contextMenus"],
+   "short_name": "WARCPinch",
+   "version": "1.3"
+}

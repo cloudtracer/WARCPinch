@@ -1,0 +1,72 @@
+{
+  "name": "WARCreate",
+  "description": "Create WARC files from any webpage",
+  "author": {
+    "email": "mkelly@cs.odu.edu",
+    "name": "Mat Kelly",
+    "url": "http://www.cs.odu.edu/~mkelly/"
+  },
+  "keywords": [
+    "archive",
+    "web archive",
+    "warc",
+    "chrome",
+    "browser",
+    "extension"
+  ],
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/machawk1/warcreate.git"
+  },
+  "scripts": {
+    "test": "standard",
+    "lint": "standard --verbose | snazzy",
+    "linting-errors-fix": "standard --fix"
+  },
+  "devDependencies": {
+    "snazzy": "^7.0.0",
+    "standard": "^10.0.2"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "node": true
+    }
+  },
+  "standard": {
+    "ignore": [
+      "js/base64.js",
+      "js/dnd-lib.js",
+      "js/date.js",
+      "js/downloadify/*",
+      "js/es6-shim.js",
+      "js/filler.min.js",
+      "js/FileSaver/*",
+      "js/FileSaver.js",
+      "js/jquery.ocupload-1.1.2.packed.js",
+      "js/jquery.rc4.js",
+      "js/upclick-min.js",
+      "js/xml2json.js"
+    ],
+    "globals": [
+      "chrome",
+      "localStorage",
+      "alert",
+      "Image",
+      "Blob",
+      "XMLHttpRequest",
+      "navigator",
+      "params",
+      "requestHeaders",
+      "responseHeaders",
+      "saveAs",
+      "$",
+      "jQuery",
+      "xml2json",
+      "moment",
+      "getallBgimages",
+      "getallBgimages"
+    ]
+  }
+}

@@ -1,0 +1,136 @@
+<html>
+<head>
+<title>WARCreate Options</title>
+<style type="text/css">
+h1 {font-style: underline;}
+#contact{ bottom: 5px; left: 5px; position: absolute;}
+input#waybackWarcSource {width: 50%;}
+.check {font-style: italic;}
+.green {font-style: normal; color: green;}
+.red {font-style: normal; color: red;}
+.orange {font-style: normal; color: orange;}
+#preflightCheck {list-style-type: none; margin: 0; padding: 0 0 0 1.0em;}
+
+input#uploadTo {width: 50%; margin-left: 1.0em;}
+
+#status {display: none;}
+#filenameSchemeElements {font-size: 0.75em; margin-left: 1.5em;}
+#filenameSchemeElements label {margin-right: 0.5em;}
+#filenameSchemeElements input {width: 25%;}
+#filenameSchemeElements #exampleFileName {margin-left: 1.0em;}
+
+fieldset {display: inline-block; font-size: 0.75em; float: left;}
+ul#sections {display: inline; vertical-align: top; margin: 0; list-style-type: none; font-size: 0.75em; font-family: Segoe UI, Tahoma, sans-serif; letter-spacing: 0.1em; }
+ul#sections li {margin-bottom: 2px; min-width:1500px; width: auto !important; width: 1250px;}
+ul#sections li span {background: linear-gradient(to bottom, #6666ff 0%, #2222ff 80%, #0000ff 100%); color: white; border: 1px solid #666ff; border-radius: 10px; padding: 2px 4px 2px 4px;  }
+ul#sections li span.name {border-top-right-radius: 0px; border-bottom-right-radius: 0px; width: auto !important; min-width: 100px; display: block; margin: 0 1px 0 0; float: left; text-align: right; border-right: 2px solid #3333ff; text-transform: uppercase;}
+ul#sections li span.url {border-top-left-radius: 0px; border-bottom-left-radius: 0px; border-left: 2px solid #3333ff; width: 500px; display: inline-block; }
+
+#sequentialArchivingSource {width: 300px; float: left;}
+#supportedSequentialArchivingSites {}
+label#sequentialArchivingSourceLabel, #sequentialArchivingAvailableHierarchiesLabel {width: 70px; float: left; display: block;}
+
+h3 {clear: both; padding-top: 1.0em; margin-bottom: 0;}
+#collectionMetadata label {width: 70px; float: left; display: block;}
+#collectionMetadata span {font-style: italic; margin-left: 0.5em;}
+
+/*#sequentialArchiving {display: none;}  This feature is not ready for production just yet */
+
+#pendingContent {clear: both; margin-top: 1.0em;}
+#pendingContentTable {table-layout: fixed; width: 100%;}
+#pendingContentTable th {border: 1px solid black;}
+#pendingContentTable td {width: 300px;  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px;}
+#pendingContentTable #uri {width: 75%;}
+#pendingContentTable .req, #pendingContentTable .res {width: 100px;}
+</style>
+</head>
+<script type="text/javascript" src="../js/jquery-2.1.1.min.js"></script>
+<script type="text/javascript" src="../js/moment-with-langs.min.js"></script>
+<script type="text/javascript" src="../js/xml2json.js"></script>
+<script type="text/javascript" src="../js/code.js"></script>
+<script type="text/javascript" src="../js/options.js"></script>
+<body id="body">
+
+<h1>WARCreate options</h1>
+<!--<label for="waybackWarcSource">Wayback WARC Source folder:</label><br /><input type="text" id="waybackWarcSource" value="C:\xampp\tomcat\webapps\ROOT\files1\"/><br />-->
+
+<h3>Handle generated WARCs by:</h3>
+<input type="radio" name="postGeneration" id="postGeneration_save" value="postGeneration_save" checked="checked" /><label for="output_save">Saving to downloads folder</label><br />
+<div id="filenameSchemeElements"><label for="filenameScheme">&gt; Filename Scheme</label><input type="text" name="filenameScheme" id="filenameScheme" value="YYYYMMDDHHMMssSSS" /><span id="exampleFileName"></span></div>
+<!--<input type="radio" name="output" id="output_save_warc" value="output_save_warc" disabled="disabled" /><label for="output_save">Saving to Wayback-Accessible folder</label><br />-->
+<input type="radio" name="postGeneration" id="postGeneration_upload" value="postGeneration_upload" /><label for="output_display">Uploading to</label>: <input type="text" id="uploadTo" value="http://warcreate.com/warcs/" disabled="disabled" />
+<br /><button id="restoreDefaults">Restore Defaults</button><button id="save">Save Changes</button><p id="status">Changes Saved!</p><br />
+
+<section id="sequentialArchivingSection">
+  <h3>"Sequential Archiving"</h3>
+  <input type="checkbox" name="sequentialArchiving" id="sequentialArchiving" />
+  <label for="sequentialArchiving">Attempt to capture all sections of current website into one WARC</label>
+  <br />
+  <fieldset>
+    <legend>Known website hierarchies</legend>
+      <label for="sequentialArchivingSource" id="sequentialArchivingSourceLabel">Source: </label>
+      <input type="text" name="sequentialArchivingSource" id="sequentialArchivingSource" value="http://spec.socialstandard.org" />
+      <br />
+	
+	  <label for="supportedSequentialArchivingSitese" id="sequentialArchivingAvailableHierarchiesLabel">Available<br />Hierarchies:</label>
+	  <select multiple id="supportedSequentialArchivingSites"></select>
+	<!--<select multiple id="supportedSequentialArchivingSites"></select>-->
+	<!--<label for="sequentialArchivingSource" id="sequentialArchivingSourceLabel">Source: </label><input type="text" name="sequentialArchivingSource" id="sequentialArchivingSource" value="http://spec.socialstandard.org" /><br />-->
+
+  </fieldset>
+  <ul id="sections"></ul>
+</section>
+
+
+<h3 id="collections">Collections</h3>
+<input type="checkbox" name="addCollectionMetadata" id="addCollectionMetadataCheckbox" /><label for="addCollectionMetadataCheckbox">Add Collection Metadata</label>
+<br />
+<fieldset id="collectionMetadata">
+<label for="collectionId">Collection ID:</label><input type="text" name="collectionId" id="collectionId"/><span>e.g., 1234</span><br />
+<label for="collectionName">Collection Name:</label><input type="text" name="collectionName" id="collectionName" /><span>e.g., My Archived Pages</span>
+</fieldset>
+<br />
+<!--
+<h3>Images</h3>
+<input type="radio" name="images" id="images_inline" value="image_inline"  /><label for="images_inline">Convert image data to inline data</label><br />
+<input type="radio" name="images" id="images_separate" value="images_separate"  checked="checked" /><label for="images_images_separate">Archive images as separate resources</label><br />
+
+
+<h3>Additional Support</h3>
+<input type="checkbox" name="memento" id="memento" disabled="disabled" /><label for="memento">Add Memento Support to HTTP Headers</label><br />
+
+<h3>Pre-flight Check</h3>
+<ul id="preflightCheck">
+	<li class="check" id="check_WarcValidation" title="http://localhost/validate.php">WARC Validation</li>
+	<li class="check" id="check_AjaxXSSCircumvention" title="http://localhost/getThatImage.php">AJAX XSS Circumvention</li>
+	<li class="check" id="check_HTML5SandboxEscaping" title="http://localhost/index.php">HTML5 Sandbox Escaping</li>
+	<li class="check" id="check_MementoSupport" title="http://localhost:81">Memento Support</li>
+	<li class="check" id="check_localWaybackInstance" title="http://localhost:8080/wayback/">Local Wayback Instance &bull; <a href="http://matkelly.com/warcreate/xampp">Get help</a></li>
+</ul>
+
+<h3 style="clear: both;">After generating a WARC:</h3>
+<form id="options">
+<input type="radio" checked="checked" name="postWARC" id="save" value="save" /><label for="save">Just save it to my computer"</label><br />
+<input type="radio" name="postWARC" id="upload" value="upload" /><label for="upload">Upload it to:</label><input type="text" id="uploadTo" value="http://warcreate.com/warcs" />
+<br />
+<input type="button" value="Restore Defaults" /><input type="submit" id="submit" />
+</form>
+-->
+
+<!--<h3 id="pendingContent">Pending Content</h3><button id="getPendingContent">Show pending content</button>
+<table id="pendingContentTable" cellspacing="0">
+<tr>
+	<th rowspan="2" id="uri">URI</th>
+	<th colspan="2">HTTP</th>
+</tr>
+<tr>
+	<th class="req">-Request</th>
+	<th class="res">-Response</th>
+</tr>
+</table>
+-->
+
+
+<p id="contact">For support or to report a bug, contact <a href="mailto:warcreate@matkelly.com">Mat Kelly</a>.</p>
+</body>
+</html>
