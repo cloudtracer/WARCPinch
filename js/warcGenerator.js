@@ -33,9 +33,41 @@ function lengthInUtf8Bytes (str) {
   return str.length + (m ? m.length : 0)
 }
 
+function ExtractHostname(url) {
+    var hostname;
+    var protocol;
+    var port;
+
+    if (url.indexOf("://") > -1) {
+        hostname = url.split('/')[2];
+        protocol = url.split(':')[0];
+    } else {
+        hostname = url.split('/')[0];
+    }
+
+    var host_bits = hostname.split(':')
+    hostname = host_bits[0];
+    if(host_bits[1]){
+      port = host_bits[1];
+    } else {
+      port = protocol;
+    }
+
+    hostname = hostname.split('?')[0];
+
+    return {
+      hostname: hostname,
+      port: port,
+      protocol: protocol
+    };
+}
+
 var responseDigests = {};
 
 var requestDigests = {};
+
+var pastkoSig = {};
+var confirmedUrls = {};
 
 /* ************** END STRING UTILITY FUNCTIONS **************  */
 
@@ -87,7 +119,6 @@ var WARCEntryCreator = {
     var wrh = `WARC/1.0${this.CRLF}WARC-Type: response${this.CRLF}WARC-Target-URI: ${targetURI}${this.CRLF}`
     wrh += `WARC-Date: ${now}${this.CRLF}WARC-Record-ID: ${this.guidGenerator()}${this.CRLF}`
     wrh += `WARC-Digest: ${responseDigests[targetURI].digest}${this.CRLF}`
-    wrh += `WARC-SSDEEP: ${responseDigests[targetURI].ssdeep}${this.CRLF}WARC-SHA256: ${responseDigests[targetURI].sha2}${this.CRLF}`
     wrh += `Content-Type: application/http; msgtype=response${this.CRLF}Content-Length: ${contentLength}${this.CRLF}`
     return wrh
   },
@@ -173,11 +204,16 @@ function asynchronouslyFetchImageData (rh, now, warcConcurrentTo, arrayBuffers, 
 
     if (Object.keys(responsesToConcatenate).length === 0) {
       if (!localStorage['uploadTo'] || localStorage['uploadTo'].length === 0) {
-        if(saveFileName && saveFileName != "") fileName = saveFileName + ".warc";
+        if(saveFileName && saveFileName != "" && typeof saveFileName != "object") fileName = saveFileName + ".warc";
+        var sigBuffer = [];
+        console.log(pastkoSig);
+        sigBuffer.push(str2ab(JSON.stringify(pastkoSig, null, 2)));
+
         console.log("SaveAs Filename: " + fileName)
         saveAs(new Blob(arrayBuffers), fileName)
+        saveAs(new Blob(sigBuffer), fileName + ".json");
       } else {
-        uploadWarc(arrayBuffers)
+        //uploadWarc(arrayBuffers)
       }
     } else {
       // console.log(('Still have to process URIs:'+Object.keys(responsesToConcatenate).join(' '))
@@ -185,12 +221,18 @@ function asynchronouslyFetchImageData (rh, now, warcConcurrentTo, arrayBuffers, 
   })
 }
 
-function doDigestRequest(url){
+function doDigestRequest(url, filename, baseInitDomain){
   var promise = new Promise(function (resolve, reject) {
+    if(!url.includes("//" + baseInitDomain.hostname + "/")){
+      console.log("Out of scope: " + url + " for domain: " + baseInitDomain.hostname);
+      return resolve({
+        status: "OUT_OF_SCOPE",
+        statusText: "ERROR"
+      });
+    }
     var xhr = new XMLHttpRequest();
     xhr.open("GET",url, true);
     xhr.responseType = "arraybuffer";
-    console.log("About to download");
     xhr.addEventListener('readystatechange', function(e) {
       if( this.readyState === 4 ) {
         var blob = new Blob([xhr.response]);
@@ -212,9 +254,21 @@ function doDigestRequest(url){
           console.log("SHA1: " + sha1raw.hex());
           console.log("Base32: " + base32sha1);
           console.log("Context Hash:", contextHash);
+          var hostName = ExtractHostname(url).hostname;
+          confirmedUrls[url] = url;
+          var urlPath = url.split(hostName)
+
+          pastkoSig[base32sha1] = {
+            "name": filename + " - " + urlPath[1],
+            "path": urlPath[1],
+            "digest": base32sha1,
+            "status": xhr.status,
+            "ssdeep": contextHash
+          }
           var obj = {
             sha2: shaObj,
             digest: base32sha1,
+            status: xhr.status,
             ssdeep: contextHash
           };
           responseDigests[url] = obj;
@@ -223,11 +277,12 @@ function doDigestRequest(url){
           var obj = {
             sha2: "REQUEST_FAILED",
             digest: "REQUEST_FAILED",
+            status: xhr.status,
             ssdeep: "REQUEST_FAILED"
           };
           responseDigests[url] = "Request Failed";
           resolve({
-            status: "Failed",
+            status: xhr.status,
             statusText: xhr.statusText
           });
         }
@@ -238,11 +293,12 @@ function doDigestRequest(url){
       var obj = {
         sha2: "REQUEST_FAILED",
         digest: "REQUEST_FAILED",
+        status: xhr.status,
         ssdeep: "REQUEST_FAILED"
       };
       responseDigests[url] = "Request Failed";
       resolve({
-        status: "Failed",
+        status: xhr.status,
         statusText: xhr.statusText
       });
     };
@@ -252,11 +308,12 @@ function doDigestRequest(url){
 }
 
 
-function updateDigests(currentTabId){
+function updateDigests(currentTabId, saveFileName, baseInitDomain, initURI){
   var promiseArray = [];
   for (var requestHeader in requestHeaders[currentTabId]) {
-    promiseArray.push(doDigestRequest(requestHeader));
+    promiseArray.push(doDigestRequest(requestHeader,saveFileName, baseInitDomain));
   }
+  promiseArray.push(doDigestRequest(initURI,saveFileName, baseInitDomain));
   return Promise.all(promiseArray);
 }
 
@@ -266,6 +323,8 @@ function generateWarc (oRequest, oSender, fCallback) {
   if (oRequest.method !== 'generateWarc') {
     return
   }
+  pastkoSig = {}; //RESET
+  confirmedUrls = {};
   console.log('Executing generateWARC() with...')
   console.log(oRequest)
   var now = new Date().toISOString()
@@ -275,8 +334,9 @@ function generateWarc (oRequest, oSender, fCallback) {
   var initURI = oRequest.url
   var currentTabId = oRequest.currentTabId;
   var saveFileName = oRequest.fileName;
+  var baseInitDomain = ExtractHostname(initURI)
 
-  updateDigests(currentTabId).then(function(results){
+  updateDigests(currentTabId, saveFileName, baseInitDomain, initURI).then(function(results){
     /*
     var i = 0;
     for (var requestHeader in requestHeaders[currentTabId]) {
@@ -284,6 +344,13 @@ function generateWarc (oRequest, oSender, fCallback) {
       i++;
     }
     */
+    if(currentTabId && initURI && requestHeaders[currentTabId] && requestHeaders[currentTabId][initURI] && confirmedUrls[initURI]){
+      //continue
+    } else {
+      console.log("Error: Current TabId = " + currentTabId + " INIT_URL = " + initURI + " requestHeaders = " + requestHeaders);
+      console.log("Confirmed URLs: " + JSON.stringify(confirmedUrls));
+      return false;
+    }
     var warcInfoDescription = 'Crawl initiated from the WARCPinch Google Chrome extension'
     var isPartOf = 'basic'
     if (localStorage.getItem('collectionId') || localStorage.getItem('collectionName')) {
@@ -358,7 +425,7 @@ function generateWarc (oRequest, oSender, fCallback) {
     var responsesToConcatenate = []
 
     for (var requestHeader in requestHeaders[currentTabId]) {
-      if (requestHeader === initURI) {
+      if (requestHeader === initURI || !confirmedUrls[requestHeader]) {
         continue // the 'seed' will not have a body, we handle this above, skip
       }
       var rhsTemp = WARCEntryCreator.makeWarcRequestHeaderWith(requestHeader, now, warcConcurrentTo, requestHeaders[currentTabId][requestHeader])
@@ -427,8 +494,13 @@ function generateWarc (oRequest, oSender, fCallback) {
 
     if (Object.keys(responsesToConcatenate).length === 0) {
       if(saveFileName && saveFileName != "") fileName = saveFileName + ".warc";
+      var sigBuffer = [];
+      console.log(pastkoSig);
+      sigBuffer.push(str2ab(JSON.stringify(pastkoSig, null, 2)));
+
       console.log("SaveAs Filename: " + fileName)
       saveAs(new Blob(arrayBuffers), fileName)
+      saveAs(new Blob(sigBuffer), fileName + ".json");
     } else {
       console.log(document.getElementById('generateWarc'))
       console.log(document)
