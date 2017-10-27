@@ -223,7 +223,7 @@ function asynchronouslyFetchImageData (rh, now, warcConcurrentTo, arrayBuffers, 
 
 function doDigestRequest(url, filename, baseInitDomain){
   var promise = new Promise(function (resolve, reject) {
-    if(!url.includes("//" + baseInitDomain.hostname + "/")){
+    if(!url.includes("//" + baseInitDomain.hostname)){
       console.log("Out of scope: " + url + " for domain: " + baseInitDomain.hostname);
       return resolve({
         status: "OUT_OF_SCOPE",
