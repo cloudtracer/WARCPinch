@@ -292,7 +292,9 @@ chrome.webRequest.onSendHeaders.addListener(function (req) {
     //console.log("reset");
   }
     for (var key in req.requestHeaders) {
-      if (!requestHeadersTracking[req.tabId][req.url].has(req.requestHeaders[key].name)) {
+      if (!requestHeadersTracking[req.tabId]
+        && !requestHeadersTracking[req.tabId][req.url]
+        && !requestHeadersTracking[req.tabId][req.url].has(req.requestHeaders[key].name)) {
         requestHeaders[req.tabId][req.url] += `${req.requestHeaders[key].name}: ${req.requestHeaders[key].value}${CRLF}`
         requestHeadersTracking[req.tabId][req.url].add(req.requestHeaders[key].name)
       }
