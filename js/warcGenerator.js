@@ -263,6 +263,7 @@ function doDigestRequest(url, filename, baseInitDomain){
             "path": urlPath[1],
             "digest": base32sha1,
             "status": xhr.status,
+            "sha2": shaObj,
             "ssdeep": contextHash
           }
           var obj = {
